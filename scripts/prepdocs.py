@@ -4,7 +4,8 @@ from typing import Any, Optional, Union
 
 from azure.core.credentials import AzureKeyCredential
 from azure.core.credentials_async import AsyncTokenCredential
-from azure.identity.aio import AzureDeveloperCliCredential
+# from azure.identity.aio import AzureDeveloperCliCredential
+from azure.identity import DefaultAzureCredential
 
 from prepdocslib.blobmanager import BlobManager
 from prepdocslib.embeddings import (
@@ -40,17 +41,18 @@ def setup_file_strategy(credential: AsyncTokenCredential, args: Any) -> FileStra
     if args.localpdfparser:
         pdf_parser = LocalPdfParser()
     else:
-        # check if Azure Document Intelligence credentials are provided
-        if args.formrecognizerservice is None:
-            print(
-                "Error: Azure Document Intelligence service is not provided. Please provide --formrecognizerservice or use --localpdfparser for local pypdf parser."
-            )
-            exit(1)
+        # check if Azure Form Recognizer credentials are provided
+        # if args.formrecognizerservice is None:
+        #     print(
+        #         "Error: Azure Form Recognizer service is not provided. Please provide formrecognizerservice or use --localpdfparser for local pypdf parser."
+        #     )
+        #     exit(1)
         formrecognizer_creds: Union[AsyncTokenCredential, AzureKeyCredential] = (
             credential if is_key_empty(args.formrecognizerkey) else AzureKeyCredential(args.formrecognizerkey)
         )
         pdf_parser = DocumentAnalysisPdfParser(
-            endpoint=f"https://{args.formrecognizerservice}.cognitiveservices.azure.com/",
+            # endpoint=f"https://{args.formrecognizerservice}.cognitiveservices.azure.com/",
+            endpoint="https://westeurope.api.cognitive.microsoft.com/",
             credential=formrecognizer_creds,
             verbose=args.verbose,
         )
@@ -62,7 +64,7 @@ def setup_file_strategy(credential: AsyncTokenCredential, args: Any) -> FileStra
             credential if is_key_empty(args.openaikey) else AzureKeyCredential(args.openaikey)
         )
         embeddings = AzureOpenAIEmbeddingService(
-            open_ai_service=args.openaiservice,
+            # open_ai_service=args.openaiservice,
             open_ai_deployment=args.openaideployment,
             open_ai_model_name=args.openaimodelname,
             credential=azure_open_ai_credential,
@@ -245,11 +247,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Use the current user identity to connect to Azure services unless a key is explicitly set for any of them
-    azd_credential = (
-        AzureDeveloperCliCredential()
-        if args.tenantid is None
-        else AzureDeveloperCliCredential(tenant_id=args.tenantid, process_timeout=60)
-    )
+    # azd_credential = (
+    #     AzureDeveloperCliCredential()
+    #     if args.tenantid is None
+    #     else AzureDeveloperCliCredential(tenant_id=args.tenantid, process_timeout=60)
+    # )
+    azd_credential = DefaultAzureCredential()
 
     file_strategy = setup_file_strategy(azd_credential, args)
     loop = asyncio.get_event_loop()

@@ -126,7 +126,7 @@ class AzureOpenAIEmbeddingService(OpenAIEmbeddings):
 
     def __init__(
         self,
-        open_ai_service: str,
+        # open_ai_service: str,
         open_ai_deployment: str,
         open_ai_model_name: str,
         credential: Union[AsyncTokenCredential, AzureKeyCredential],
@@ -134,14 +134,14 @@ class AzureOpenAIEmbeddingService(OpenAIEmbeddings):
         verbose: bool = False,
     ):
         super().__init__(open_ai_model_name, disable_batch, verbose)
-        self.open_ai_service = open_ai_service
+        # self.open_ai_service = open_ai_service
         self.open_ai_deployment = open_ai_deployment
         self.credential = credential
         self.cached_token: Optional[AccessToken] = None
 
     async def create_client(self) -> AsyncOpenAI:
         return AsyncAzureOpenAI(
-            azure_endpoint=f"https://{self.open_ai_service}.openai.azure.com",
+            azure_endpoint=f"https://westeurope.api.cognitive.microsoft.com/",
             azure_deployment=self.open_ai_deployment,
             api_key=await self.wrap_credential(),
             api_version="2023-05-15",

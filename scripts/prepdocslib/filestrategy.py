@@ -53,6 +53,7 @@ class FileStrategy(Strategy):
             files = self.list_file_strategy.list()
             async for file in files:
                 try:
+                    print(f"OCR'ing file: {file.filename()}")
                     pages = [page async for page in self.pdf_parser.parse(content=file.content)]
                     if search_info.verbose:
                         print(f"Splitting '{file.filename()}' into sections")
