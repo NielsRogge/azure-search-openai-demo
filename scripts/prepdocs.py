@@ -4,7 +4,8 @@ from typing import Any, Optional, Union
 
 from azure.core.credentials import AzureKeyCredential
 from azure.core.credentials_async import AsyncTokenCredential
-from azure.identity.aio import AzureDeveloperCliCredential
+# from azure.identity.aio import AzureDeveloperCliCredential
+from azure.identity import DefaultAzureCredential
 
 from prepdocslib.blobmanager import BlobManager
 from prepdocslib.embeddings import (
@@ -20,7 +21,7 @@ from prepdocslib.listfilestrategy import (
 )
 from prepdocslib.pdfparser import DocumentAnalysisPdfParser, LocalPdfParser, PdfParser
 from prepdocslib.strategy import SearchInfo, Strategy
-from prepdocslib.textsplitter import TextSplitter
+from prepdocslib.textsplitter import TextSplitter, TextSplitterBasedOnChapters
 
 
 def is_key_empty(key):
@@ -40,17 +41,18 @@ def setup_file_strategy(credential: AsyncTokenCredential, args: Any) -> FileStra
     if args.localpdfparser:
         pdf_parser = LocalPdfParser()
     else:
-        # check if Azure Form Recognizer credentials are provided
-        if args.formrecognizerservice is None:
-            print(
-                "Error: Azure Form Recognizer service is not provided. Please provide formrecognizerservice or use --localpdfparser for local pypdf parser."
-            )
-            exit(1)
+        # # check if Azure Form Recognizer credentials are provided
+        # if args.formrecognizerservice is None:
+        #     print(
+        #         "Error: Azure Form Recognizer service is not provided. Please provide formrecognizerservice or use --localpdfparser for local pypdf parser."
+        #     )
+        #     exit(1)
         formrecognizer_creds: Union[AsyncTokenCredential, AzureKeyCredential] = (
             credential if is_key_empty(args.formrecognizerkey) else AzureKeyCredential(args.formrecognizerkey)
         )
         pdf_parser = DocumentAnalysisPdfParser(
-            endpoint=f"https://{args.formrecognizerservice}.cognitiveservices.azure.com/",
+            # endpoint=f"https://{args.formrecognizerservice}.cognitiveservices.azure.com/",
+            endpoint="https://westeurope.api.cognitive.microsoft.com/",
             credential=formrecognizer_creds,
             verbose=args.verbose,
         )
@@ -62,7 +64,7 @@ def setup_file_strategy(credential: AsyncTokenCredential, args: Any) -> FileStra
             credential if is_key_empty(args.openaikey) else AzureKeyCredential(args.openaikey)
         )
         embeddings = AzureOpenAIEmbeddingService(
-            open_ai_service=args.openaiservice,
+            # open_ai_service=args.openaiservice,
             open_ai_deployment=args.openaideployment,
             open_ai_model_name=args.openaimodelname,
             credential=azure_open_ai_credential,
@@ -101,11 +103,13 @@ def setup_file_strategy(credential: AsyncTokenCredential, args: Any) -> FileStra
     else:
         document_action = DocumentAction.Add
 
+    text_splitter = TextSplitterBasedOnChapters() if args.split_based_on_chapters else TextSplitter()
+
     return FileStrategy(
         list_file_strategy=list_file_strategy,
         blob_manager=blob_manager,
         pdf_parser=pdf_parser,
-        text_splitter=TextSplitter(),
+        text_splitter=text_splitter,
         document_action=document_action,
         embeddings=embeddings,
         search_analyzer_name=args.searchanalyzername,
@@ -136,7 +140,7 @@ if __name__ == "__main__":
         description="Prepare documents by extracting content from PDFs, splitting content into sections, uploading to blob storage, and indexing in a search index.",
         epilog="Example: prepdocs.py '..\data\*' --storageaccount myaccount --container mycontainer --searchservice mysearch --index myindex -v",
     )
-    parser.add_argument("files", nargs="?", help="Files to be processed")
+    parser.add_argument("--files", nargs="?", help="Files to be processed")
     parser.add_argument(
         "--datalakestorageaccount", required=False, help="Optional. Azure Data Lake Storage Gen2 Account name"
     )
@@ -159,9 +163,6 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--category", help="Value for the category field in the search index for all sections indexed in this run"
-    )
-    parser.add_argument(
-        "--skipblobs", action="store_true", help="Skip uploading individual pages to Azure Blob Storage"
     )
     parser.add_argument("--storageaccount", help="Azure Blob Storage account name")
     parser.add_argument("--container", help="Azure Blob Storage container name")
@@ -240,16 +241,22 @@ if __name__ == "__main__":
         required=False,
         help="Optional. Use this Azure Form Recognizer account key instead of the current user identity to login (use az login to set current user for Azure)",
     )
+    parser.add_argument(
+        "--split_based_on_chapters",
+        action="store_false",
+        help="Whether to create chunks only within chapters of a PDF",
+    )
 
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
     args = parser.parse_args()
 
     # Use the current user identity to connect to Azure services unless a key is explicitly set for any of them
-    azd_credential = (
-        AzureDeveloperCliCredential()
-        if args.tenantid is None
-        else AzureDeveloperCliCredential(tenant_id=args.tenantid, process_timeout=60)
-    )
+    # azd_credential = (
+    #     AzureDeveloperCliCredential()
+    #     if args.tenantid is None
+    #     else AzureDeveloperCliCredential(tenant_id=args.tenantid, process_timeout=60)
+    # )
+    azd_credential = DefaultAzureCredential()
 
     file_strategy = setup_file_strategy(azd_credential, args)
     loop = asyncio.get_event_loop()

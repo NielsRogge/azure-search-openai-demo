@@ -4,6 +4,7 @@ from typing import Optional, Union
 
 from azure.core.credentials_async import AsyncTokenCredential
 from azure.storage.blob.aio import BlobServiceClient
+from azure.storage.blob import ContentSettings
 
 from .listfilestrategy import File
 
@@ -36,7 +37,9 @@ class BlobManager:
             with open(file.content.name, "rb") as reopened_file:
                 blob_name = BlobManager.blob_name_from_file_name(file.content.name)
                 print(f"\tUploading blob for whole file -> {blob_name}")
-                await container_client.upload_blob(blob_name, reopened_file, overwrite=True)
+                # make sure to set the content type to PDF
+                content_settings = ContentSettings(content_type='application/pdf')
+                await container_client.upload_blob(blob_name, reopened_file, overwrite=True, content_settings=content_settings)
 
     async def remove_blob(self, path: Optional[str] = None):
         async with BlobServiceClient(
@@ -63,7 +66,7 @@ class BlobManager:
     @classmethod
     def sourcepage_from_file_page(cls, filename, page=0) -> str:
         if os.path.splitext(filename)[1].lower() == ".pdf":
-            return f"{os.path.basename(filename)}#page={page+1}"
+            return f"{os.path.basename(filename)}#page={page}"
         else:
             return os.path.basename(filename)
 
