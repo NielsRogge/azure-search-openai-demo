@@ -126,7 +126,7 @@ class AzureOpenAIEmbeddingService(OpenAIEmbeddings):
 
     def __init__(
         self,
-        open_ai_service: str,
+        # open_ai_service: str,
         open_ai_deployment: str,
         open_ai_model_name: str,
         credential: Union[AsyncTokenCredential, AzureKeyCredential],
@@ -134,7 +134,7 @@ class AzureOpenAIEmbeddingService(OpenAIEmbeddings):
         verbose: bool = False,
     ):
         super().__init__(open_ai_model_name, disable_batch, verbose)
-        self.open_ai_service = open_ai_service
+        # self.open_ai_service = open_ai_service
         self.open_ai_deployment = open_ai_deployment
         self.credential = credential
         self.cached_token: Optional[AccessToken] = None
@@ -146,7 +146,8 @@ class AzureOpenAIEmbeddingService(OpenAIEmbeddings):
             "api_type": self.get_api_type(),
             "api_key": await self.wrap_credential(),
             "api_version": "2023-05-15",
-            "api_base": f"https://{self.open_ai_service}.openai.azure.com",
+            # "api_base": f"https://{self.open_ai_service}.openai.azure.com",
+            "api_base": "https://westeurope.api.cognitive.microsoft.com/",
         }
 
     def get_api_type(self) -> str:
