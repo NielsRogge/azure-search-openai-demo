@@ -74,8 +74,8 @@ class LocalListFileStrategy(ListFileStrategy):
 
     async def list(self) -> AsyncGenerator[File, None]:
         async for path in self.list_paths():
-            if not self.check_md5(path):
-                yield File(content=open(path, mode="rb"))
+            # if not self.check_md5(path):
+            yield File(content=open(path, mode="rb"))
 
     def check_md5(self, path: str) -> bool:
         # if filename ends in .md5 skip

@@ -1,4 +1,5 @@
 from enum import Enum
+import pickle
 from typing import Optional
 
 from .blobmanager import BlobManager
@@ -51,10 +52,16 @@ class FileStrategy(Strategy):
         search_manager = SearchManager(search_info, self.search_analyzer_name, self.use_acls, self.embeddings)
         if self.document_action == DocumentAction.Add:
             files = self.list_file_strategy.list()
+            # print("Files:")
+            # async for file in files:
+            #     print(file)
+            #     print(file.content)
+            files_dict = dict()
             async for file in files:
                 try:
                     print(f"OCR'ing file: {file.filename()}")
                     pages = [page async for page in self.pdf_parser.parse(content=file.content)]
+                    files_dict[file.filename] = pages
                     if search_info.verbose:
                         print(f"Splitting '{file.filename()}' into sections")
                     sections = [
@@ -66,6 +73,8 @@ class FileStrategy(Strategy):
                 finally:
                     if file:
                         file.close()
+                with open('saved_dictionary.pkl', 'wb') as f:
+                    pickle.dump(files_dict, f)
         elif self.document_action == DocumentAction.Remove:
             paths = self.list_file_strategy.list_paths()
             async for path in paths:
