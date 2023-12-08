@@ -1,4 +1,4 @@
-#!/bin/sh
+# create index "personeel-form-recognizer-basic" on ML6's subscription
 python prepdocs.py \
 "/Users/nielsrogge/Downloads/PDF_files/personeel/*" \
 --category personeel \

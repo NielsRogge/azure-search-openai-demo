@@ -56,12 +56,15 @@ class FileStrategy(Strategy):
             # async for file in files:
             #     print(file)
             #     print(file.content)
-            files_dict = dict()
+            files_dict = {}
             async for file in files:
                 try:
+                    if file.filename() in ["Algemeen-v1-20230901_094814.pdf", "Helpdesk & interventie-v13-20230904_160207.pdf"]:
+                        # we get timeout errors on this huge PDF
+                        continue
                     print(f"OCR'ing file: {file.filename()}")
                     pages = [page async for page in self.pdf_parser.parse(content=file.content)]
-                    files_dict[file.filename] = pages
+                    files_dict[file.filename] = [page.text for page in pages]
                     if search_info.verbose:
                         print(f"Splitting '{file.filename()}' into sections")
                     sections = [
@@ -73,8 +76,8 @@ class FileStrategy(Strategy):
                 finally:
                     if file:
                         file.close()
-                with open('saved_dictionary.pkl', 'wb') as f:
-                    pickle.dump(files_dict, f)
+            with open(f'files_with_ocr_{self.category}.pkl', 'wb') as f:
+                pickle.dump(files_dict, f)
         elif self.document_action == DocumentAction.Remove:
             paths = self.list_file_strategy.list_paths()
             async for path in paths:

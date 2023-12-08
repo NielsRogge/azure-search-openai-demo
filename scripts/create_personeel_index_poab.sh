@@ -1,4 +1,4 @@
-#!/bin/sh
+# create index "personeel-form-recognizer-basic" on poab's subscription
 python prepdocs.py \
 "/Users/nielsrogge/Downloads/PDF_files/personeel/*" \
 --category personeel \
